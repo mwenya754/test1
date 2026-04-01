@@ -8,4 +8,6 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   // Enable React plugin to support JSX syntax and React Fast Refresh (hot module replacement)
   plugins: [react()],
+  // Required for GitHub Pages when the site is served from /<repo-name>/
+  base: '/test1/',
 })
