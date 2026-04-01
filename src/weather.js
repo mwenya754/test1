@@ -116,23 +116,16 @@ export function generateInsight(dailyData) {
   insights.push(`Warmest day this week: ${formatDayName(warmestDay.date)} (${warmestDay.temp}°C)`);
   insights.push(`Coolest day this week: ${formatDayName(coolestDay.date)} (${coolestDay.temp}°C)`);
 
-  // Find the best day to go outside based on low rain and comfortable temperature (around 22°C)
-  const nonRainyDays = dailyData.filter((d) => d.rainProbability <= 30);
-  if (nonRainyDays.length > 0) {
-    // Find day with lowest rain probability and closest to ideal temperature
-    const bestDay = nonRainyDays.reduce((best, d) => {
-      const score = d.temp - Math.abs(d.temp - 22);
-      const bestScore = best.temp - Math.abs(best.temp - 22);
-      return score > bestScore ? d : best;
-    });
-    insights.push(`Best day to go out: ${formatDayName(bestDay.date)} (${bestDay.temp}°C, ${bestDay.rainProbability}% rain)`);
-  } else {
-    // If all days have rain, recommend the day with lowest rain probability
-    const bestDay = dailyData.reduce((best, d) => {
-      return d.rainProbability < best.rainProbability ? d : best;
-    });
-    insights.push(`All days have some rain chance. Best option: ${formatDayName(bestDay.date)} (${bestDay.rainProbability}% rain)`);
-  }
+  // Best day to go out is defined as the lowest point on the temperature graph.
+  // If temperatures tie, prefer the day with lower rain chance.
+  const bestDay = dailyData.reduce((best, d) => {
+    if (d.temp < best.temp) return d;
+    if (d.temp === best.temp && d.rainProbability < best.rainProbability) return d;
+    return best;
+  });
+  insights.push(
+    `Best day to go out: ${formatDayName(bestDay.date)} (${bestDay.temp}°C, lowest point on the graph)`
+  );
 
   return insights;
 }
