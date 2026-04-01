@@ -1,29 +1,14 @@
 import { useState } from 'react';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-} from 'chart.js';
-import { Line } from 'react-chartjs-2';
-import { fetchWeather, processForecast, generateInsight, formatDate } from './weather';
+import { fetchWeather, processForecast, generateInsight } from './weather';
+import HeroHeader from './components/HeroHeader';
+import SearchBar from './components/SearchBar';
+import ErrorAlert from './components/ErrorAlert';
+import LoadingState from './components/LoadingState';
+import CurrentWeatherPanel from './components/CurrentWeatherPanel';
+import TemperatureTrendPanel from './components/TemperatureTrendPanel';
+import InsightsPanel from './components/InsightsPanel';
+import EmptyStatePanel from './components/EmptyStatePanel';
 import './App.css';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
 
 export default function App() {
   const [city, setCity] = useState('');
@@ -65,148 +50,61 @@ export default function App() {
     }
   };
 
-  const chartData = {
-    labels: forecast.map((d) => formatDate(d.date)),
-    datasets: [
-      {
-        label: 'Temperature (°C)',
-        data: forecast.map((d) => d.temp),
-        borderColor: '#4fc3f7',
-        backgroundColor: 'rgba(79, 195, 247, 0.15)',
-        pointBackgroundColor: '#4fc3f7',
-        pointBorderColor: '#fff',
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        tension: 0.4,
-        fill: true,
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        labels: { color: '#e0e0e0' },
-      },
-      title: {
-        display: true,
-        text: '5–7 Day Temperature Trend',
-        color: '#e0e0e0',
-        font: { size: 16 },
-      },
-      tooltip: {
-        callbacks: {
-          label: (ctx) => `${ctx.parsed.y}°C`,
-        },
-      },
-    },
-    scales: {
-      x: {
-        ticks: { color: '#b0bec5', maxRotation: 30 },
-        grid: { color: 'rgba(255,255,255,0.1)' },
-      },
-      y: {
-        ticks: {
-          color: '#b0bec5',
-          callback: (v) => `${v}°C`,
-        },
-        grid: { color: 'rgba(255,255,255,0.1)' },
-      },
-    },
-  };
+  const tempValues = forecast.map((d) => d.temp);
+  const rainValues = forecast.map((d) => d.rainProbability);
+  const weeklyHigh = tempValues.length ? Math.max(...tempValues) : null;
+  const weeklyLow = tempValues.length ? Math.min(...tempValues) : null;
+  const averageRain = rainValues.length
+    ? Math.round(rainValues.reduce((sum, value) => sum + value, 0) / rainValues.length)
+    : null;
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>🌤️ Weather Trend Planner</h1>
-        <p>Plan your outdoor activities with confidence</p>
-      </header>
+    <div className="page">
+      <div className="ambient-glow ambient-glow--one" aria-hidden="true" />
+      <div className="ambient-glow ambient-glow--two" aria-hidden="true" />
 
-      <main className="app-main">
-        <form className="search-form" onSubmit={handleSearch}>
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Enter city name…"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            aria-label="City name"
+      <div className="wireframe-window">
+        <div className="window-chrome">
+          <div className="window-dots" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+          <p className="window-address">Skyline Forecast Desk</p>
+        </div>
+
+        <main className="window-content">
+          <HeroHeader />
+
+          <SearchBar
+            city={city}
+            onCityChange={setCity}
+            onSubmit={handleSearch}
+            loading={loading}
           />
-          <button type="submit" className="search-button" disabled={loading}>
-            {loading ? 'Searching…' : 'Search'}
-          </button>
-        </form>
 
-        {error && (
-          <div className="error-card" role="alert">
-            ⚠️ {error}
-          </div>
-        )}
+          {error && <ErrorAlert message={error} />}
 
-        {loading && (
-          <div className="loading" aria-live="polite">
-            <div className="spinner" />
-            <p>Fetching weather data…</p>
-          </div>
-        )}
+          {loading && <LoadingState />}
 
-        {weatherData && (
-          <>
-            <section className="weather-card" aria-label="Current weather">
-              <div className="weather-icon-wrap">
-                <img
-                  src={`https://openweathermap.org/img/wn/${weatherData.icon}@2x.png`}
-                  alt={weatherData.condition}
-                  className="weather-icon"
-                />
-              </div>
-              <div className="weather-info">
-                <h2 className="weather-city">
-                  {weatherData.city}, {weatherData.country}
-                </h2>
-                <p className="weather-temp">{weatherData.temp}°C</p>
-                <p className="weather-condition">{weatherData.condition}</p>
-              </div>
-            </section>
+          {weatherData && (
+            <>
+              <CurrentWeatherPanel
+                weatherData={weatherData}
+                weeklyHigh={weeklyHigh}
+                weeklyLow={weeklyLow}
+                averageRain={averageRain}
+              />
 
-            <section className="chart-section" aria-label="Temperature trend chart">
-              <Line data={chartData} options={chartOptions} />
-            </section>
+              <TemperatureTrendPanel forecast={forecast} />
 
-            <section className="insights-section" aria-label="Weather insights">
-              <h2>💡 Insights</h2>
-              <ul className="insights-list">
-                {insights.map((insight, i) => (
-                  <li key={i} className="insight-item">
-                    {insight}
-                  </li>
-                ))}
-              </ul>
-            </section>
+              <InsightsPanel insights={insights} />
+            </>
+          )}
 
-            <section className="forecast-table-section" aria-label="Daily forecast">
-              <h2>📅 Daily Forecast</h2>
-              <div className="forecast-grid">
-                {forecast.map((day) => (
-                  <div key={day.date} className="forecast-card">
-                    <p className="forecast-date">{formatDate(day.date)}</p>
-                    <p className="forecast-temp">{day.temp}°C</p>
-                    <p className="forecast-condition">{day.condition}</p>
-                    <p className="forecast-rain">🌧 {day.rainProbability}%</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </>
-        )}
-
-        {!weatherData && !loading && !error && (
-          <div className="placeholder">
-            <p>Enter a city name above to get started.</p>
-          </div>
-        )}
-      </main>
+          {!weatherData && !loading && !error && <EmptyStatePanel />}
+        </main>
+      </div>
     </div>
   );
 }
