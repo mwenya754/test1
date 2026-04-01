@@ -124,7 +124,7 @@ export function generateInsight(dailyData) {
     return best;
   });
   insights.push(
-    `Best day to go out: ${formatDayName(bestDay.date)} (${bestDay.temp}°C, lowest point on the graph)`
+    `Best day to go out: ${formatDayName(bestDay.date)} (${bestDay.temp}°C) with lowest forecast temperature and a ${bestDay.rainProbability}% chance of rainfall.`
   );
 
   return insights;
