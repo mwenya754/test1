@@ -6,7 +6,7 @@ export default function SearchBar({ city, onCityChange, onSubmit, loading }) {
         id="city"
         type="text"
         className="search-input"
-        placeholder="Try London, Tokyo, Nairobi..."
+        placeholder="Try Lusaka, Ndola, Kitwe..."
         value={city}
         onChange={(e) => onCityChange(e.target.value)}
         aria-label="City name"
