@@ -88,24 +88,33 @@ export function processForecast(data) {
 // Returns: Array of insight strings highlighting notable weather events
 export function generateInsight(dailyData) {
   const insights = [];  // Array to store generated insights
-
-  // Alert for high rain probability
-  const rainDay = dailyData.find((d) => d.rainProbability > 60);
-  if (rainDay) {
-    insights.push(`Rain expected on ${formatDate(rainDay.date)} (${rainDay.rainProbability}% chance)`);
+  if (!dailyData || dailyData.length === 0) {
+    return insights;
   }
 
-  // Alert for very hot weather (above 35°C)
-  const hotDay = dailyData.find((d) => d.temp > 35);
+  // Alert for rainy conditions
+  const rainDay = dailyData.find((d) => d.rainProbability >= 50);
+  if (rainDay) {
+    insights.push(`Rain expected on ${formatDayName(rainDay.date)} (${rainDay.rainProbability}% chance)`);
+  }
+
+  // Alert for very hot weather (34°C and above)
+  const hotDay = dailyData.find((d) => d.temp >= 34);
   if (hotDay) {
-    insights.push(`Very hot day expected on ${formatDate(hotDay.date)} (${hotDay.temp}°C) — stay hydrated!`);
+    insights.push(`Very hot day expected on ${formatDayName(hotDay.date)} (${hotDay.temp}°C) — stay hydrated!`);
   }
 
   // Alert for very cold weather (below 5°C)
   const coldDay = dailyData.find((d) => d.temp < 5);
   if (coldDay) {
-    insights.push(`Very cold day expected on ${formatDate(coldDay.date)} (${coldDay.temp}°C) — dress warmly!`);
+    insights.push(`Very cold day expected on ${formatDayName(coldDay.date)} (${coldDay.temp}°C) — dress warmly!`);
   }
+
+  // Add top-level weekly temperature highlights
+  const warmestDay = dailyData.reduce((warmest, d) => (d.temp > warmest.temp ? d : warmest));
+  const coolestDay = dailyData.reduce((coolest, d) => (d.temp < coolest.temp ? d : coolest));
+  insights.push(`Warmest day this week: ${formatDayName(warmestDay.date)} (${warmestDay.temp}°C)`);
+  insights.push(`Coolest day this week: ${formatDayName(coolestDay.date)} (${coolestDay.temp}°C)`);
 
   // Find the best day to go outside based on low rain and comfortable temperature (around 22°C)
   const nonRainyDays = dailyData.filter((d) => d.rainProbability <= 30);
@@ -116,16 +125,22 @@ export function generateInsight(dailyData) {
       const bestScore = best.temp - Math.abs(best.temp - 22);
       return score > bestScore ? d : best;
     });
-    insights.push(`Best day to go out: ${formatDate(bestDay.date)} (${bestDay.temp}°C)`);
+    insights.push(`Best day to go out: ${formatDayName(bestDay.date)} (${bestDay.temp}°C, ${bestDay.rainProbability}% rain)`);
   } else {
     // If all days have rain, recommend the day with lowest rain probability
     const bestDay = dailyData.reduce((best, d) => {
       return d.rainProbability < best.rainProbability ? d : best;
     });
-    insights.push(`All days have some rain chance. Best option: ${formatDate(bestDay.date)} (${bestDay.rainProbability}% rain)`);
+    insights.push(`All days have some rain chance. Best option: ${formatDayName(bestDay.date)} (${bestDay.rainProbability}% rain)`);
   }
 
   return insights;
+}
+
+// Format date as weekday name only
+export function formatDayName(dateStr) {
+  const date = new Date(dateStr + 'T00:00:00');
+  return date.toLocaleDateString('en-US', { weekday: 'long' });
 }
 
 // Format a date string into a human-readable format
